@@ -1,5 +1,7 @@
 # yt-dlp 下载器
 
+[![build](https://github.com/fjnpzh/yt-dlp-downloader/actions/workflows/build.yml/badge.svg)](https://github.com/fjnpzh/yt-dlp-downloader/actions/workflows/build.yml)
+
 一个用 **Wails + Go** 写的 yt-dlp 图形外壳。Go 负责进程管理与配置，WebView2 负责界面，最终产物是 12 MB 的单文件 exe，运行时依赖系统的 WebView2 运行时。
 
 最初是一个 Python/Tkinter 小工具（源码保留在 [`legacy/`](legacy/)），后来整体重写成了现在这个版本。
@@ -43,6 +45,18 @@ python make_icon.py      # 需要 Pillow
 
 wails build              # 产出 build/bin/yt-dlp-downloader.exe
 wails dev                # 开发模式，支持热重载
+```
+
+## 自动构建
+
+仓库自带 GitHub Actions（[`.github/workflows/build.yml`](.github/workflows/build.yml)）：
+
+- 推到 `main`、提 PR 时自动编译，产物在 Actions 页面的 Artifacts 里（只含 exe）
+- 推 `v*` 标签时额外创建一个 Release，附件是 **exe + yt-dlp + ffmpeg** 的完整包，解压即用
+- 也可以在 Actions 页面手动触发，勾选 `bundle_deps` 决定是否打包依赖
+
+```bash
+git tag v2.0.0 && git push origin v2.0.0
 ```
 
 ## 项目结构

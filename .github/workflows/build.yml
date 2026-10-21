@@ -1,0 +1,104 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - "LICENSE"
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bundle_deps:
+        description: "同时打包 yt-dlp.exe 与 ffmpeg.exe（约 +120 MB）"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Windows amd64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Add GOPATH/bin to PATH
+        shell: pwsh
+        run: 'echo "$(go env GOPATH)\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append'
+
+      - name: Install Wails CLI
+        shell: pwsh
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0
+
+      - name: Environment check
+        shell: pwsh
+        run: wails doctor
+
+      - name: Vet
+        shell: pwsh
+        run: go vet ./...
+
+      - name: Build
+        shell: pwsh
+        run: wails build -clean -platform windows/amd64 -ldflags "-s -w"
+
+      - name: Package
+        shell: pwsh
+        env:
+          BUNDLE_DEPS: ${{ (inputs.bundle_deps == true) || (github.ref_type == 'tag') }}
+        run: |
+          $dist = "dist"
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          Copy-Item "build/bin/yt-dlp-downloader.exe" "$dist/"
+
+          if ($env:BUNDLE_DEPS -eq "true") {
+            Write-Host "Downloading yt-dlp..."
+            Invoke-WebRequest -Uri "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile "$dist/yt-dlp.exe"
+
+            Write-Host "Downloading ffmpeg..."
+            $zip = "$env:RUNNER_TEMP/ffmpeg.zip"
+            Invoke-WebRequest -Uri "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" -OutFile $zip
+            Expand-Archive -Path $zip -DestinationPath "$env:RUNNER_TEMP/ffmpeg" -Force
+            $ff = Get-ChildItem -Path "$env:RUNNER_TEMP/ffmpeg" -Recurse -Filter "ffmpeg.exe" | Select-Object -First 1
+            Copy-Item $ff.FullName "$dist/ffmpeg.exe"
+          }
+
+          Get-ChildItem $dist | Format-Table Name, Length
+          Compress-Archive -Path "$dist/*" -DestinationPath "yt-dlp-downloader-windows-amd64.zip" -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: yt-dlp-downloader-windows-amd64
+          path: yt-dlp-downloader-windows-amd64.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Attach to release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: yt-dlp-downloader-windows-amd64
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: yt-dlp-downloader-windows-amd64.zip
+          generate_release_notes: true
