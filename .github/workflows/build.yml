@@ -52,6 +52,15 @@ jobs:
         shell: pwsh
         run: go vet ./...
 
+      - name: Test
+        shell: pwsh
+        run: go test ./...
+
+      - name: Frontend test
+        shell: pwsh
+        # 回归测试：yt-dlp / ffmpeg 两条依赖路径不能互相覆盖
+        run: node frontend/test/deps.test.mjs
+
       - name: Build
         shell: pwsh
         run: wails build -clean -platform windows/amd64 -ldflags "-s -w"

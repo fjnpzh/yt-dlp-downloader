@@ -13,6 +13,10 @@ const state = {
     format: 'mp4',
     resolution: 'best',
     cookiesFile: '',
+    // 依赖路径独立保存，不从表单推导、也不依赖 state.cfg 的完整性，
+    // 这样指定 yt-dlp 和指定 ffmpeg 永远不会互相覆盖。
+    ytdlpPath: '',
+    ffmpegPath: '',
     logs: 0,
     saveTimer: null,
 };
@@ -31,7 +35,7 @@ const mockCfg = {
 
 const mockApi = {
     GetConfig: async () => ({ ...mockCfg }),
-    SaveConfig: async (c) => { Object.assign(mockCfg, c); return 'C:\\Temp\\ytdlp_gui_config.json'; },
+    SaveConfig: async (c) => { Object.assign(mockCfg, c); return { ...mockCfg }; },
     ResetConfig: async () => ({ ...mockCfg }),
     GetHelp: async () => '【预览模式】\n\n当前页面是在普通浏览器中打开的，未连接到 Go 后端，\n所以下载、选目录等操作只是模拟效果。\n\n在 Wails 窗口内运行时会连接真实的 yt-dlp。',
     GetDeps: async () => ({
@@ -113,20 +117,28 @@ function updateUrlCount() {
 }
 
 /* ------------------------------------------------------------ config */
+function cfgObject() {
+    return (state.cfg && typeof state.cfg === 'object') ? state.cfg : {};
+}
+
 function applyConfig(cfg) {
-    state.cfg = cfg;
-    $('#outDir').value = cfg.output_dir || '';
-    $('#tmpl').value = cfg.filename_tmpl || '';
-    $('#proxy').value = cfg.proxy || '';
-    $('#cookies').value = cfg.cookies || 'none';
-    $('#noPlaylist').checked = !!cfg.no_playlist;
-    $('#thumb').checked = !!cfg.thumbnail;
-    setFormat(cfg.format || 'mp4', false);
-    setResolution(cfg.resolution || 'best', false);
+    state.cfg = (cfg && typeof cfg === 'object') ? cfg : {};
+    const c = state.cfg;
+    state.ytdlpPath = c.ytdlp_path || '';
+    state.ffmpegPath = c.ffmpeg_path || '';
+    $('#outDir').value = c.output_dir || '';
+    $('#tmpl').value = c.filename_tmpl || '';
+    $('#proxy').value = c.proxy || '';
+    $('#cookies').value = c.cookies || 'none';
+    $('#noPlaylist').checked = !!c.no_playlist;
+    $('#thumb').checked = !!c.thumbnail;
+    setFormat(c.format || 'mp4', false);
+    setResolution(c.resolution || 'best', false);
     onCookiesChange();
 }
 
 function collectConfig() {
+    const prev = cfgObject();
     return {
         output_dir: $('#outDir').value.trim(),
         resolution: state.resolution,
@@ -136,11 +148,12 @@ function collectConfig() {
         cookies: $('#cookies').value,
         no_playlist: $('#noPlaylist').checked,
         thumbnail: $('#thumb').checked,
-        ytdlp_path: (state.cfg && state.cfg.ytdlp_path) || '',
-        ffmpeg_path: (state.cfg && state.cfg.ffmpeg_path) || '',
-        author: (state.cfg && state.cfg.author) || 'fjnpzh',
-        version: '2.0',
-        help: (state.cfg && state.cfg.help) || '',
+        // 两个依赖路径各用各的字段，互不干扰
+        ytdlp_path: state.ytdlpPath || '',
+        ffmpeg_path: state.ffmpegPath || '',
+        author: prev.author || 'fjnpzh',
+        version: prev.version || '2.0',
+        help: prev.help || '',
     };
 }
 
@@ -151,7 +164,9 @@ function scheduleSave() {
 
 async function saveConfig() {
     try {
-        state.cfg = await api.SaveConfig(collectConfig());
+        const saved = await api.SaveConfig(collectConfig());
+        // 后端返回的是归一化后的配置对象，缓存它，避免下次保存丢字段
+        if (saved && typeof saved === 'object') state.cfg = saved;
     } catch (e) {
         console.error(e);
     }
@@ -258,10 +273,23 @@ async function refreshDeps() {
 async function pickDependency(field, kind) {
     const p = await api.BrowseFile(kind);
     if (!p) return;
+    // 先落到独立的 state 字段，再整体保存 —— 两个字段各自独立
+    if (field === 'ytdlp_path') state.ytdlpPath = p;
+    else state.ffmpegPath = p;
+
     const cfg = collectConfig();
-    cfg[field] = p;
-    state.cfg = await api.SaveConfig(cfg);
-    toast('已保存路径', 'ok');
+    try {
+        const saved = await api.SaveConfig(cfg);
+        if (saved && typeof saved === 'object') {
+            state.cfg = saved;
+            state.ytdlpPath = saved.ytdlp_path || state.ytdlpPath;
+            state.ffmpegPath = saved.ffmpeg_path || state.ffmpegPath;
+        }
+        toast(field === 'ytdlp_path' ? '已保存 yt-dlp 路径' : '已保存 ffmpeg 路径', 'ok');
+    } catch (e) {
+        toast(String(e), 'err');
+        return;
+    }
     refreshDeps();
 }
 

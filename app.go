@@ -231,10 +231,12 @@ func normalizeConfig(c *Config) {
 	if c.Cookies == "" {
 		c.Cookies = "none"
 	}
+	// 旧版配置里是 "Firefox" / "Chrome" 这类首字母大写的标签，统一转小写再匹配
+	c.Cookies = strings.ToLower(strings.TrimSpace(c.Cookies))
 	if strings.HasPrefix(c.Cookies, "无") {
 		c.Cookies = "none"
 	}
-	if strings.HasPrefix(c.Cookies, "Cookies 文件") {
+	if strings.HasPrefix(c.Cookies, "cookies 文件") {
 		c.Cookies = "file"
 	}
 	switch c.Cookies {
@@ -293,16 +295,19 @@ func (a *App) GetConfig() Config {
 	return a.cfg
 }
 
-// SaveConfig persists settings and returns the file that was written.
-func (a *App) SaveConfig(cfg Config) (string, error) {
+// SaveConfig persists settings and returns the normalized config that was
+// actually written. Returning the config (not the file path) keeps the
+// frontend's cached copy in sync — it used to receive a string, which made the
+// next save lose ytdlp_path / ffmpeg_path.
+func (a *App) SaveConfig(cfg Config) (Config, error) {
 	normalizeConfig(&cfg)
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.cfg = cfg
 	if err := a.saveConfigLocked(); err != nil {
-		return "", err
+		return a.cfg, err
 	}
-	return a.cfgPath, nil
+	return a.cfg, nil
 }
 
 // ResetConfig restores factory defaults and saves them.

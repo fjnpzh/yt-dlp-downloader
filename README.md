@@ -47,6 +47,15 @@ wails build              # 产出 build/bin/yt-dlp-downloader.exe
 wails dev                # 开发模式，支持热重载
 ```
 
+## 测试
+
+```bash
+go test ./...                      # 后端：配置读写、旧版中文标签归一化
+node frontend/test/deps.test.mjs   # 前端：yt-dlp 与 ffmpeg 两条依赖路径互不覆盖
+```
+
+两条命令在 CI 里都会跑，任何一个失败都不会产出二进制。
+
 ## 自动构建
 
 仓库自带 GitHub Actions（[`.github/workflows/build.yml`](.github/workflows/build.yml)）：
@@ -63,8 +72,10 @@ git tag v2.0.0 && git push origin v2.0.0
 
 ```
 app.go                 配置读写、依赖探测、yt-dlp 进程管理、进度解析、事件推送
+app_test.go            后端单元测试
 main.go                窗口尺寸与深色标题栏
 frontend/src/          纯 HTML/CSS/JS，无前端构建步骤
+frontend/test/         前端回归测试（用假 DOM 驱动真实的 main.js）
 build/                 图标与 Windows 清单
 legacy/                原始 Python/Tkinter 版本，仅作对照
 make_icon.py           生成 build/appicon.png 与 build/windows/icon.ico
