@@ -1,0 +1,13 @@
+{
+  "output_dir": "C:\\Users\\YourName\\Downloads",
+  "resolution": "1080p",
+  "format": "视频+音频 (MP4)",
+  "filename_tmpl": "",
+  "proxy": "",
+  "cookies": "无 (不使用 Cookies, 默认)",
+  "no_playlist": true,
+  "thumbnail": false,
+  "author": "fjnpzh",
+  "version": "1.0",
+  "help": "这是旧版 Python GUI 的示例配置，字段名与新版完全一致，可以直接被新版读取（新版会自动把中文标签归一化成内部 key）。"
+}

@@ -1,0 +1,24 @@
+# 构建产物（含 yt-dlp.exe / ffmpeg.exe，体积大，不入库）
+build/bin
+build/windows/installer/wails_tools.nsh
+build/windows/installer/tmp/
+
+# wails build 生成的备份文件
+*.exe~
+
+# 自动生成的前端绑定
+frontend/wailsjs
+
+# 本地配置（可能含个人路径 / 代理）
+ytdlp_gui_config.json
+!legacy/ytdlp_gui_config.json
+
+# wails build 生成的 Windows 资源
+*.syso
+
+# IDE
+.idea
+.vscode
+
+# 依赖
+node_modules

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "ytdlp-wails",
+  "outputfilename": "yt-dlp-downloader",
+  "frontend:install": "",
+  "frontend:build": "",
+  "wailsjsdir": "./frontend",
+  "info": {
+    "companyName": "fjnpzh",
+    "productName": "yt-dlp 下载器",
+    "productVersion": "2.0.0",
+    "copyright": "Copyright © 2026 fjnpzh",
+    "comments": "yt-dlp 图形外壳 · Wails + Go"
+  },
+  "author": {
+    "name": "fjnpzh",
+    "email": ""
+  }
+}
