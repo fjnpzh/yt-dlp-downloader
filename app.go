@@ -197,7 +197,7 @@ func defaultConfig() Config {
 		NoPlaylist: true,
 		Cookies:    "none",
 		Author:     "fjnpzh",
-		Version:    "2.0",
+		Version:    "2.0.1",
 	}
 }
 
@@ -274,7 +274,7 @@ func (a *App) saveConfigLocked() error {
 		cfg.Author = "fjnpzh"
 	}
 	if cfg.Version == "" {
-		cfg.Version = "2.0"
+		cfg.Version = "2.0.1"
 	}
 	raw, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {

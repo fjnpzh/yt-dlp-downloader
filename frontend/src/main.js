@@ -152,7 +152,7 @@ function collectConfig() {
         ytdlp_path: state.ytdlpPath || '',
         ffmpeg_path: state.ffmpegPath || '',
         author: prev.author || 'fjnpzh',
-        version: prev.version || '2.0',
+        version: prev.version || '2.0.1',
         help: prev.help || '',
     };
 }

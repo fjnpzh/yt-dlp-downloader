@@ -1,6 +1,7 @@
 # yt-dlp 下载器
 
 [![build](https://github.com/fjnpzh/yt-dlp-downloader/actions/workflows/build.yml/badge.svg)](https://github.com/fjnpzh/yt-dlp-downloader/actions/workflows/build.yml)
+[![release](https://img.shields.io/github/v/release/fjnpzh/yt-dlp-downloader)](https://github.com/fjnpzh/yt-dlp-downloader/releases/latest)
 
 一个用 **Wails + Go** 写的 yt-dlp 图形外壳。Go 负责进程管理与配置，WebView2 负责界面，最终产物是 12 MB 的单文件 exe，运行时依赖系统的 WebView2 运行时。
 
@@ -65,7 +66,7 @@ node frontend/test/deps.test.mjs   # 前端：yt-dlp 与 ffmpeg 两条依赖路�
 - 也可以在 Actions 页面手动触发，勾选 `bundle_deps` 决定是否打包依赖
 
 ```bash
-git tag v2.0.0 && git push origin v2.0.0
+git tag v2.0.1 && git push origin v2.0.1
 ```
 
 ## 项目结构
@@ -96,6 +97,18 @@ yt-dlp 从 2025 年起把 YouTube 的 n-sig 解密交给了外部 JS 运行时�
 **YouTube 提示需要登录 / 机器人验证？** 在「高级选项 → 浏览器 Cookies」里选择对应浏览器。Chrome 和 Edge 必须先完全退出（它们的 Cookie 数据库被占用），Firefox 一般不需要。
 
 **合并失败？** 缺 ffmpeg。放到 exe 同目录，或在「运行环境」里指定。
+
+## 更新日志
+
+### v2.0.1
+
+- 修复：分别指定 yt-dlp 与 ffmpeg 时，两条路径会互相覆盖（先设置的被后设置的清空）
+- 修复：旧配置文件里的 `cookies` 写成 `"Firefox"` 这类首字母大写时不被识别
+- 新增：后端单元测试与前端回归测试，CI 中任一失败都不再产出二进制
+
+### v2.0.0
+
+- 首个基于 Wails + Go 的正式版本，替代原 Python/Tkinter 版本
 
 ## 声明
 
